@@ -44,7 +44,7 @@ struct data_vertex
     float * data;
     // int gl_VertexID;
     // int gl_InstanceID;
-    // int gl_DrawID;
+    // int gl_DrawID; 
     // int gl_BaseVertex;
     // int gl_BaseInstance;
 };
