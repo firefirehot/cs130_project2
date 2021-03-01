@@ -17,13 +17,16 @@ driver_state::~driver_state()
 void initialize_render(driver_state& state, int width, int height)
 {
 	pixel * alloc_color = new pixel[width*height];
+	float * alloc_depth = new float[width*height];
+	for(int x = 0; x< width*height; x++)
+		alloc_depth[x] = 1.1;
 	for(int x = 0; x< width*height; x++)
 		alloc_color[x] = make_pixel(0,0,0);
     state.image_width=width;
     state.image_height=height;
     state.image_color=alloc_color;
-    state.image_depth=0;
-    std::cout<<"TODO: allocate and initialize state.image_color and state.image_depth."<<std::endl;
+    state.image_depth=alloc_depth;
+   // std::cout<<"TODO: allocate and initialize state.image_color and state.image_depth."<<std::endl;
 }
 
 // This function will be called to render the data that has been stored in this class.
@@ -43,8 +46,14 @@ void render(driver_state& state, render_type type)
     for(int x = 0; x < state.num_vertices * state.floats_per_vertex; x = x + state.floats_per_vertex){
 		alloc_geometry[x/state.floats_per_vertex].data = new float[MAX_FLOATS_PER_VERTEX];
 		input_for_vertex_shader.data = &state.vertex_data[x];
+		
+		for(int f = 0; f < state.floats_per_vertex;f++)//I don't know if this has to be done but it seems right
+			alloc_geometry[x/state.floats_per_vertex].data[f] = state.vertex_data[x+f];//same here
+		
 		state.vertex_shader(input_for_vertex_shader, alloc_geometry[x/state.floats_per_vertex],state.uniform_data);
 		//std::cout << alloc_geometry[x/state.floats_per_vertex].gl_Position[0] <<  " __" << alloc_geometry[x/state.floats_per_vertex].gl_Position[1] << std::endl;
+		//std::cout << input_for_vertex_shader.data[0] <<  " __" << input_for_vertex_shader.data[1] << std::endl;
+		//std::cout << alloc_geometry[x/state.floats_per_vertex].data[0] <<  " __" << alloc_geometry[x/state.floats_per_vertex].data[1] << std::endl;
 }
 	switch(type){
 	case render_type::indexed:
@@ -117,6 +126,29 @@ double alpha;
 double beta;
 double gamma;
 
+data_fragment input;
+data_output out;
+float array[MAX_FLOATS_PER_VERTEX];
+input.data = array;
+/*
+for(int i = 0; i < state.floats_per_vertex; i++){
+	if(state.interp_rules[i] == interp_type::flat){
+		input.data[i] = v0.data[i];
+	//	std:: cout << "-- " << v0.data[i];
+	}
+	else if (state.interp_rules[i] == interp_type::smooth){
+		//input.data[i] = ;
+		
+	}
+	else if (state.interp_rules[i] == interp_type::noperspective ){
+		input.data[i] = ;
+		
+	}
+	else
+		std::cout << "error in data fragment calculation,driverstate.cpp/rasterize_triangle" << std::endl;
+}
+ */
+
 /*std::cout << std::endl << v0_NDC_x
 << std::endl << v0_NDC_y
 << std::endl << v1_NDC_x
@@ -133,9 +165,31 @@ for(int y = 0; y < state.image_height; y++)
 		//PCA
 		gamma = area_calc(x, y, v0_NDC_x, v0_NDC_y, v1_NDC_x, v1_NDC_y)/total_area;
 		//PAB
+		
+		for(int i = 0; i < state.floats_per_vertex; i++){
+			if(state.interp_rules[i] == interp_type::flat){
+				input.data[i] = v0.data[i];
+			//	std:: cout << "-- " << v0.data[i];
+			}
+			else if (state.interp_rules[i] == interp_type::smooth){
+				//input.data[i] = ;
+			
+			}
+			else if (state.interp_rules[i] == interp_type::noperspective ){
+				input.data[i] = alpha*v0.data[i] + beta*v1.data[i] + gamma*v2.data[i];
+			}	
+			else
+				std::cout << "error in data fragment calculation,driverstate.cpp/rasterize_triangle" << std::endl;
+		}
+		
+		
 		if(alpha >= 0 && beta >= 0 && gamma >= 0){
-
-		state.image_color[x + y*(state.image_width)] = make_pixel(255,255,255);
+			
+		state.fragment_shader(input, out, state.uniform_data);
+		if(state.image_depth[x + y*(state.image_width)] > alpha*v0_Position[2] + beta*v1_Position[2] + gamma*v2_Position[2]){
+			state.image_depth[x + y*(state.image_width)] = alpha*v0_Position[2] + beta*v1_Position[2] + gamma*v2_Position[2];
+			state.image_color[x + y*(state.image_width)] = make_pixel(out.output_color[0]*255,out.output_color[1]*255,out.output_color[2]*255);
+		}
 		}
 	}
 

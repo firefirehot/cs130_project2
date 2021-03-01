@@ -41,7 +41,7 @@ struct driver_state
     //   interp_type::smooth         - Vertex values are interpolated using perspective-
     //                                 correct interpolation.
     //   interp_type::noperspective  - Vertex values are interpolated using image-space
-    //                                 barycentric coordinates.
+    //                                 barycentric coordinates. 
     interp_type interp_rules[MAX_FLOATS_PER_VERTEX] = {};
 
     // Image dimensions
