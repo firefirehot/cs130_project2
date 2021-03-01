@@ -99,6 +99,9 @@ return d;
 void rasterize_triangle(driver_state& state, const data_geometry& v0,
     const data_geometry& v1, const data_geometry& v2)
 {
+	/*clipping goes before divide by w*/
+	
+	
 vec4 v0_Position = v0.gl_Position/v0.gl_Position[3];
 if(v0.gl_Position[3] == 0)
 	v0_Position = v0.gl_Position;
